@@ -1,20 +1,35 @@
 package com.calc.rosana.calculadoracolor;
 
+import android.content.res.Configuration;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import butterknife.BindView;
+import butterknife.OnClick;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    boolean decimal, suma, resta, multiplica, divi = false;
-    private EditText operando;
-    private EditText visor;
+    private static final String CONCATENATE_VALUE = "concatenado";
+    private static final String RESULT_VALUE = "resultado";
+    private static final String OPERATION_VALUE = "operacion";
+    public enum Operations {
+        ADD,
+        SUBSTRACT,
+        MULTIPLY,
+        DIVIDE
+    }
+    boolean decimal = false;
+    private Operations operation;
+
     private double concatenado, resultado, concatenado2=0;
     private String numero="";
+
+    @BindView(R.id.numA) EditText visor;
+    private EditText operando;
 
     private Button uno;
     private Button dos;
@@ -43,10 +58,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        this.visor = (EditText) findViewById(R.id.numA);
+        if (savedInstanceState != null) {
+            concatenado = savedInstanceState.getDouble(CONCATENATE_VALUE, 0);
+            resultado = savedInstanceState.getDouble(RESULT_VALUE, 0);
+            int op = savedInstanceState.getInt(OPERATION_VALUE, -1);
+            if(op > -1)
+                operation = Operations.values()[op];
+        }
+
+        //this.visor = (EditText) findViewById(R.id.numA);
 
         this.cero = (Button) findViewById(R.id.num0);
-        cero.setOnClickListener(this);
+        //cero.setOnClickListener(this);
         this.uno = (Button) findViewById(R.id.num1);
         uno.setOnClickListener(this);
 
@@ -91,19 +114,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        // Make sure to call the super method so that the states of our views are saved
+        super.onSaveInstanceState(outState);
+        // Save our own state now
+        if(operation != null)
+            outState.putSerializable(OPERATION_VALUE, operation.ordinal());
+
+        outState.putSerializable(CONCATENATE_VALUE, concatenado);
+        outState.putSerializable(RESULT_VALUE, resultado);
+    }
+
+    @OnClick(R.id.num0)
+    public void pressNum0() {
+        numero = visor.getText().toString();
+        visor.setText(numero + "0");
+        numero = visor.getText().toString();
+        concatenado = Double.parseDouble(numero);
+    }
+
+    @Override
     public void onClick(View v) {
 
        numero = visor.getText().toString();
 
         switch (v.getId()) {
 
-            case R.id.num0:
+            /*case R.id.num0:
                 visor.setText(numero + "0");
                 numero = visor.getText().toString();
                 concatenado = Double.parseDouble(numero);
-                concatenado2 = concatenado;
-                concatenado=0;
-                break;
+                break;*/
 
             case R.id.num1:
                 visor.setText(numero + "1");
@@ -169,65 +210,50 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.suma:
-                suma = true;
+                operation = Operations.ADD;
                 resultado=concatenado;
                 visor.setText("");
                 decimal = false;
-                resta=false;
-                multiplica=false;
-                divi=false;
                 break;
 
 
             case R.id.resta:
-                resta = true;
+                operation = Operations.SUBSTRACT;
                 resultado=concatenado;
                 visor.setText("");
                 decimal = false;
-                suma=false;
-                multiplica=false;
-                divi=false;
                 break;
 
 
             case R.id.multipli:
-                multiplica = true;
+                operation = Operations.MULTIPLY;
                 resultado=concatenado;
                 visor.setText("");
                 decimal = false;
-                suma=false;
-                divi=false;
-                resta=false;
                 break;
 
             case R.id.div:
-                divi = true;
+                operation = Operations.DIVIDE;
                 resultado=concatenado;
                 visor.setText("");
                 decimal = false;
-                suma=false;
-                multiplica=false;
-                resta=false;
                 break;
 
             case R.id.igual:
-                if (suma) {
+                if (operation == Operations.ADD) {
                     resultado =resultado+concatenado;
                     visor.setText(""+resultado);
-                    suma = false;
-                } else if (resta) {
+                } else if (operation == Operations.SUBSTRACT) {
                     resultado =resultado-concatenado;
                     visor.setText("" + resultado);
-                    resta=false;
-                } else if (multiplica) {
+                } else if (operation == Operations.MULTIPLY) {
                     resultado = resultado * concatenado;
                     visor.setText("" + resultado);
-                    multiplica=false;
-                } else if (divi) {
+                } else if (operation == Operations.DIVIDE) {
                     resultado = resultado / concatenado;
                     visor.setText("" + resultado);
-                    divi=false;
                 }
+                operation = null;
                 break;
 
             case R.id.resetear:
